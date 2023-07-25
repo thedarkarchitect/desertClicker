@@ -36,14 +36,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desertclicker.R
+import com.example.desertclicker.data.Datasource.dessertList
 import com.example.desertclicker.model.Dessert
 import com.example.desertclicker.ui.theme.DessertClickerTheme
 
 @Composable
-private fun DessertClickerApp(
-    desertViewModel: DesertViewModel = viewModel()
+fun DessertClickerApp(
+    desertViewModel: DesertViewModel = viewModel(),
+//    desserts: List<Dessert>
 ) {
-
+    val desserts: List<Dessert> = dessertList
     val dessertUiState by desertViewModel.uiState.collectAsState()
 
     var currentDessertPrice by rememberSaveable {
@@ -226,6 +228,6 @@ private fun DessertsSoldInfo(
 @Composable
 fun MyDessertClickerAppPreview() {
     DessertClickerTheme {
-        DessertClickerApp(listOf(Dessert(R.drawable.cupcake, 5, 0)))
+        DessertClickerApp()
     }
 }
