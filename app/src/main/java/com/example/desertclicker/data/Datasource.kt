@@ -1,7 +1,7 @@
 
 package com.example.desertclicker.data
 
-import com.example.dessertclicker.R
+import com.example.desertclicker.R
 import com.example.desertclicker.model.Dessert
 
 /**
