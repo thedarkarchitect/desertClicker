@@ -73,6 +73,6 @@ fun DessertApp(){
 @Composable
 fun DessertPreview(){
     DessertClickerTheme {
-        DessertApp()
+        DessertClickerApp()
     }
 }

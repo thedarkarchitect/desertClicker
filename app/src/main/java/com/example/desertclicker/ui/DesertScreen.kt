@@ -1,5 +1,9 @@
 package com.example.desertclicker.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,9 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -34,60 +35,62 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desertclicker.R
-import com.example.desertclicker.data.Datasource.dessertList
-import com.example.desertclicker.model.Dessert
 import com.example.desertclicker.ui.theme.DessertClickerTheme
+@Composable
+fun DessertClickerApp(
+    viewModel: DesertViewModel = viewModel()
+) {
+    val dessertUiState by viewModel.uiState.collectAsState()
+    DessertClickerApp(
+        uiState = dessertUiState,
+        onDessertClicked = viewModel::onDessertClicked
+    )
+}
 
 @Composable
 fun DessertClickerApp(
-    desertViewModel: DesertViewModel = viewModel(),
-//    desserts: List<Dessert>
+    uiState: DesertUiState,
+    onDessertClicked: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val desserts: List<Dessert> = dessertList
-    val dessertUiState by desertViewModel.uiState.collectAsState()
-
-    var currentDessertPrice by rememberSaveable {
-        mutableStateOf(desserts[dessertUiState.currentDessertIndex].price)
-    }
-    var currentDessertImageId by rememberSaveable {
-        mutableStateOf(desserts[dessertUiState.currentDessertIndex].imageId)
-    }
 
     Scaffold(
         topBar = {
             val intentContext = LocalContext.current
             DessertClickerAppBar(
                 onShareButtonClicked = {
-                    desertViewModel.shareSoldDessertsInformation(
+                    shareSoldDessertsInformation(
                         intentContext = intentContext,
-                        dessertsSold = dessertUiState.dessertsSold,
-                        revenue = dessertUiState.revenue
+                        dessertsSold = uiState.dessertsSold,
+                        revenue = uiState.revenue
                     )
                 },
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.primary)
             )
         }
     ) { contentPadding ->
         DessertClickerScreen(
-            revenue = dessertUiState.revenue,
-            dessertsSold = dessertUiState.dessertsSold,
-            dessertImageId = currentDessertImageId,
-            onDessertClicked = {
+            revenue = uiState.revenue,
+            dessertsSold = uiState.dessertsSold,
+            dessertImageId = uiState.currentDessertImageId,
+            onDessertClicked = onDessertClicked,
+//            {
 
                 // Update the revenue
-                dessertUiState.revenue += currentDessertPrice
-                dessertUiState.dessertsSold++
-
-                // Show the next dessert
-                val dessertToShow = desertViewModel.determineDessertToShow(dessertUiState.dessertsSold)
-                currentDessertImageId = dessertToShow.imageId
-                currentDessertPrice = dessertToShow.price
-            },
-            modifier = Modifier.padding(contentPadding)
+//                dessertUiState.revenue += dessertUiState.currentDessertPrice
+//                dessertUiState.dessertsSold++
+//
+//                // Show the next dessert
+//                val dessertToShow = desertViewModel.determineDessertToShow(dessertUiState.dessertsSold)
+//                currentDessertImageId = dessertToShow.imageId
+//                currentDessertPrice = dessertToShow.price
+//            },
+            modifier = modifier.padding(contentPadding)
         )
     }
 }
@@ -221,6 +224,36 @@ private fun DessertsSoldInfo(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSecondaryContainer
         )
+    }
+}
+
+/**
+ * Share desserts sold information using ACTION_SEND intent
+ */
+fun shareSoldDessertsInformation(
+    intentContext: Context,
+    dessertsSold: Int,
+    revenue: Int
+) {
+    val sendIntent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(
+            Intent.EXTRA_TEXT,
+            intentContext.getString(R.string.share_text, dessertsSold, revenue)
+        )
+        type = "text/plain"
+    }
+
+    val shareIntent = Intent.createChooser(sendIntent, null)
+
+    try {
+        ContextCompat.startActivity(intentContext, shareIntent, null)
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(
+            intentContext,
+            intentContext.getString(R.string.sharing_not_available),
+            Toast.LENGTH_LONG
+        ).show()
     }
 }
 

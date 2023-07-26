@@ -12,6 +12,7 @@ import com.example.desertclicker.model.Dessert
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class DesertViewModel: ViewModel() {
     //Game Ui state
@@ -19,18 +20,30 @@ class DesertViewModel: ViewModel() {
     //Backing property to avoid state updates from other classes
     val uiState: StateFlow<DesertUiState> = _uiState.asStateFlow()
 
-
+    fun onDessertClicked()
+    {
+        _uiState.update{cupcakeUiState ->
+            val dessertsSold = cupcakeUiState.dessertsSold + 1
+            val nextDessertIndex = determineDessertIndex(dessertsSold)
+            cupcakeUiState.copy(
+                currentDessertIndex = nextDessertIndex,
+                revenue = cupcakeUiState.revenue + cupcakeUiState.currentDessertPrice,
+                dessertsSold = dessertsSold,
+                currentDessertImageId = dessertList[nextDessertIndex].imageId,
+                currentDessertPrice = dessertList[nextDessertIndex].price
+            )
+        }
+    }
     /**
      * Determine which dessert to show.
      */
-    fun determineDessertToShow(
+    fun determineDessertIndex(
         dessertsSold: Int
-    ): Dessert {
-//        desserts = dessertList
-        var dessertToShow = dessertList.first()
-        for (dessert in dessertList) {
-            if (dessertsSold >= dessert.startProductionAmount) {
-                dessertToShow = dessert
+    ): Int {
+        var dessertIndex = 0
+        for (index in dessertList.indices) {
+            if (dessertsSold >= dessertList[index].startProductionAmount) {
+                dessertIndex = index
             } else {
                 // The list of desserts is sorted by startProductionAmount. As you sell more desserts,
                 // you'll start producing more expensive desserts as determined by startProductionAmount
@@ -40,38 +53,9 @@ class DesertViewModel: ViewModel() {
             }
         }
 
-        return dessertToShow
+        return dessertIndex
     }
 
-    /**
-     * Share desserts sold information using ACTION_SEND intent
-     */
-    fun shareSoldDessertsInformation(
-        intentContext: Context,
-        dessertsSold: Int,
-        revenue: Int
-    ) {
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(
-                Intent.EXTRA_TEXT,
-                intentContext.getString(R.string.share_text, dessertsSold, revenue)
-            )
-            type = "text/plain"
-        }
-
-        val shareIntent = Intent.createChooser(sendIntent, null)
-
-        try {
-            ContextCompat.startActivity(intentContext, shareIntent, null)
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(
-                intentContext,
-                intentContext.getString(R.string.sharing_not_available),
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
 
 
 }
